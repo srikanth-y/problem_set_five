@@ -99,7 +99,11 @@ Group <- c("Control", "Treatment", "Treatment", "Treatment")
 
 POD_PromptSource <- c('No Prompt', 'NEJM & Doctor', 'FB & Student', 'No Source')
 
-observations_summary <- data.frame(Hall,ControlPeriodObservations, TreatmentPeriodObservations, Group, POD_PromptSource)
+observations_summary <- data.frame(Hall,
+                                   ControlPeriodObservations, 
+                                   TreatmentPeriodObservations, 
+                                   Group, 
+                                   POD_PromptSource)
 
 # Displaying the Observations summary
 kable(observations_summary, caption = 'Observations Summary')
@@ -111,7 +115,10 @@ and luckily they did not have a huge impact in the stair usage in the control pe
 
 ```{r echo = FALSE}
 # Stairsusage of 4 random halls \nat a public university in Hong Kong
-ggplot(stair_plot_data) + geom_bar(aes(x = hall, fill = stairuse)) + facet_wrap(~ period) + ggtitle("Figure 2: Stairsusage of 4 random halls \nat a public university in Hong Kong")
+ggplot(stair_plot_data) + 
+  geom_bar(aes(x = hall, fill = stairuse)) + 
+  facet_wrap(~ period) + 
+  ggtitle("Figure 2: Stairsusage of 4 random halls \nat a public university in Hong Kong")
 ```
 
 
@@ -119,7 +126,10 @@ Let's dig more into the number of times stairs used at each hall in both Control
 
 ```{r echo = FALSE}
 # Number of times stairs used in 4 random halls \nat a public university in Hong Kong
-ggplot(stair_plot_data %>% filter(stairuse == TRUE)) + geom_bar(aes(x=hall, fill=Group)) + facet_wrap(~ period) + ggtitle("Figure 3: Number of times stairs used in 4 random halls \nat a public university in Hong Kong")
+ggplot(stair_plot_data %>% filter(stairuse == TRUE)) + 
+  geom_bar(aes(x=hall, fill=Group)) + 
+  facet_wrap(~ period) + 
+  ggtitle("Figure 3: Number of times stairs used in 4 random halls \nat a public university in Hong Kong")
 ```
 
 # Difference in Differences
@@ -129,30 +139,46 @@ The first thing we're interested to know is whether the treatment had any effect
 
 # Manually Calculating all the Differences 
 
-hall_a_control_percentage <- round((nrow(stair_data %>% filter(hall == '1' & period == '0' & stairuse == '1'))/
+hall_a_control_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '1' & period == '0' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '1' & period == '0'))) * 100, digits = 2)
-hall_b_control_percentage <- round((nrow(stair_data %>% filter(hall == '2' & period == '0' & stairuse == '1'))/
+
+hall_b_control_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '2' & period == '0' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '2' & period == '0'))) * 100, digits = 2)
-hall_c_control_percentage <- round((nrow(stair_data %>% filter(hall == '3' & period == '0' & stairuse == '1'))/
+
+hall_c_control_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '3' & period == '0' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '3' & period == '0'))) * 100, digits = 2)
-hall_d_control_percentage <- round((nrow(stair_data %>% filter(hall == '4' & period == '0' & stairuse == '1'))/
+
+hall_d_control_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '4' & period == '0' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '4' & period == '0'))) * 100, digits = 2)
 
 
-hall_bcd_cp_percentage <- round((nrow(stair_data %>% filter(treatment == '1' & period == '0' & stairuse == '1'))/
+hall_bcd_cp_percentage <- round(
+  (nrow(stair_data %>% filter(treatment == '1' & period == '0' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall != '1' & period == '0'))) * 100, digits = 2)
 
-hall_bcd_tp_percentage <- round((nrow(stair_data %>% filter(treatment == '1' & period == '1' & stairuse == '1'))/
+hall_bcd_tp_percentage <- round(
+  (nrow(stair_data %>% filter(treatment == '1' & period == '1' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall != '1' & period == '1'))) * 100, digits = 2)
 
 
-hall_a_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '1' & period == '1' & stairuse == '1'))/
+hall_a_treatment_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '1' & period == '1' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '1' & period == '1'))) * 100, digits = 2)
-hall_b_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '2' & period == '1' & stairuse == '1'))/
+
+hall_b_treatment_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '2' & period == '1' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '2' & period == '1'))) * 100, digits = 2)
-hall_c_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '3' & period == '1' & stairuse == '1'))/
+
+hall_c_treatment_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '3' & period == '1' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '3' & period == '1'))) * 100, digits = 2)
-hall_d_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '4' & period == '1' & stairuse == '1'))/
+
+hall_d_treatment_percentage <- round(
+  (nrow(stair_data %>% filter(hall == '4' & period == '1' & stairuse == '1'))/
   nrow(stair_data %>% filter(hall == '4' & period == '1'))) * 100, digits = 2)
 
 # Differencs in Control Period
@@ -169,16 +195,36 @@ difference_d_tp <- hall_d_treatment_percentage - hall_a_treatment_percentage
 
 
 
-Variable <- c('Control Group (Hall A)','Treatment Groups(Hall B,C,D)', 'Difference (Control and Treatment Groups)','Hall B', 'Difference(Control Group and Hall B)', 'Hall C', 'Difference(Control Group and Hall C)', 'Hall D', 'Difference(Control Group and Hall D)')
+Variable <- c('Control Group (Hall A)','Treatment Groups(Hall B,C,D)', 
+              'Difference (Control and Treatment Groups)',
+              'Hall B', 'Difference(Control Group and Hall B)', 
+              'Hall C', 'Difference(Control Group and Hall C)', 
+              'Hall D', 'Difference(Control Group and Hall D)')
 
 
-ControlPeriod <- c(hall_a_control_percentage, hall_bcd_cp_percentage, difference_bcd_cp, hall_b_control_percentage, difference_b_cp, hall_c_control_percentage, difference_c_cp, hall_d_control_percentage, difference_d_cp)
+ControlPeriod <- c(hall_a_control_percentage, hall_bcd_cp_percentage, 
+                   difference_bcd_cp, 
+                   hall_b_control_percentage, difference_b_cp, 
+                   hall_c_control_percentage, difference_c_cp, 
+                   hall_d_control_percentage, difference_d_cp)
 
 
-TreatmentPeriod <- c(hall_a_treatment_percentage, hall_bcd_tp_percentage, difference_bcd_tp, hall_b_treatment_percentage, difference_b_tp, hall_c_treatment_percentage, difference_c_tp, hall_d_treatment_percentage, difference_d_tp)
+TreatmentPeriod <- c(hall_a_treatment_percentage, hall_bcd_tp_percentage, 
+                     difference_bcd_tp, 
+                     hall_b_treatment_percentage, difference_b_tp, 
+                     hall_c_treatment_percentage, difference_c_tp, 
+                     hall_d_treatment_percentage, difference_d_tp)
 
 # Calculating Difference in Differences
-PeriodDifference <- c(hall_a_treatment_percentage - hall_a_control_percentage, hall_bcd_tp_percentage - hall_bcd_cp_percentage, difference_bcd_tp - difference_bcd_cp, hall_b_treatment_percentage - hall_b_control_percentage, difference_b_tp - difference_b_cp, hall_c_treatment_percentage - hall_c_control_percentage, difference_c_tp - difference_c_cp, hall_d_treatment_percentage - hall_d_control_percentage, difference_d_tp - difference_d_cp)
+PeriodDifference <- c(hall_a_treatment_percentage - hall_a_control_percentage, 
+                      hall_bcd_tp_percentage - hall_bcd_cp_percentage, 
+                      difference_bcd_tp - difference_bcd_cp, 
+                      hall_b_treatment_percentage - hall_b_control_percentage, 
+                      difference_b_tp - difference_b_cp, 
+                      hall_c_treatment_percentage - hall_c_control_percentage, 
+                      difference_c_tp - difference_c_cp, 
+                      hall_d_treatment_percentage - hall_d_control_percentage, 
+                      difference_d_tp - difference_d_cp)
 
 # Creating summary data frame
 summary_table <- data.frame(Variable, ControlPeriod, TreatmentPeriod, PeriodDifference)
@@ -205,7 +251,8 @@ Let's see if we can predict the treatment effect by performing Difference in Dif
 lm_model_h1 <- lm(stairuse ~ treatment * period, data = stair_data)
 
 # Summary of Linear Model 1
-kable(tidy(lm_model_h1), caption = "Linear Model estimating the average Difference in Differences")
+kable(tidy(lm_model_h1), 
+      caption = "Linear Model estimating the average Difference in Differences")
 ```
 
 
@@ -217,7 +264,8 @@ Table 6 shows the summary of Model 2, DiD estimates of all the 3 treatment group
 lm_model_h2 <- lm(stairuse ~ hall * period, data = stair_data)
 
 # Summary of Linear Model 2
-kable(tidy(lm_model_h2), caption = "Linear Model estimating Difference in Differences of each Hall in treatment group")
+kable(tidy(lm_model_h2), 
+      caption = "Linear Model estimating Difference in Differences of each Hall in treatment group")
 ```
 
 
@@ -236,7 +284,7 @@ A variable that could have been useful if available and ignored in the analysis 
 
 ## Appendix {-}
 Reproducable code of this document is available at 
-
+https://github.com/srikanth-y/problem_set_five/tree/master
 
 
 \newpage
@@ -256,5 +304,3 @@ Reproducable code of this document is available at
 - Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
   https://doi.org/10.21105/joss.01686
 - Yihui Xie (2019). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.26.
-
-
