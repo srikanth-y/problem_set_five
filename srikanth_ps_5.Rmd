@@ -132,7 +132,7 @@ ggplot(stair_plot_data %>% filter(stairuse == TRUE)) +
   ggtitle("Figure 3: Number of times stairs used in 4 random halls \nat a public university in Hong Kong")
 ```
 
-# Difference in Differences
+### Difference in Differences
 The first thing we're interested to know is whether the treatment had any effect on the stair usage in treatment groups after removing the natural trend, this value can be seen in the 3rd row of PeriodDifference column and it is 2.49, indicating that installing PODprompts had a positive effect on the number of times stairs used in the treatment groups, in other words, stair usage is increased by 2.49% in treatment groups. In Table 4, we can also find the effect of each POD prompt had on stair usage to understand which type of POD prompt source yielded better results. POD prompts in Hall B, C, D had a positive effect with increased stair usage of 1.60%, 3.40%, 2.40% respectively. Clearly POD prompt in Hall C with less credible source had the highest effect, Hall B had the least effect despite having the High Credible source (Lee IP, Walker RM, 2019)  and even the POD prompt installed in Hall D with no source performed better.
 
 ```{r echo = FALSE}
@@ -283,7 +283,8 @@ There were a lot of weaknesses with the dataset and the data collection process.
 A variable that could have been useful if available and ignored in the analysis is anonymized person id, this could have helped in validating the DiD results. There may be a few students who use stairs all the time, and these people could roam more or less often depending on the week, day or time, in that case, even though there are more instances of using stairs it doesn't mean more people are using stairs, having a 'person id' could help in finding the possibility of such scenarios.
 
 ## Appendix {-}
-Reproducable code of this document is available at 
+Reproducable code of this document is available at: 
+\newline
 https://github.com/srikanth-y/problem_set_five/tree/master
 
 
@@ -304,3 +305,5 @@ https://github.com/srikanth-y/problem_set_five/tree/master
 - Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
   https://doi.org/10.21105/joss.01686
 - Yihui Xie (2019). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.26.
+
+
