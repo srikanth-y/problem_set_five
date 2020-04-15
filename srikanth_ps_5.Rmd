@@ -1,0 +1,260 @@
+---
+title: "Effect of POD(Point of Decision) prompts and their sources on encouraging people to choose stairs over the elevator"
+author: "Srikanth Yarraguntla"
+date: "14/04/2020"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract
+The effect of POD (Point Of Decision) Prompts had in encouraging people to use stairs and whether the source credibility of POD prompts matter are studied on the dataset from a quasi-experimental field study where the intervention took place in 3 of 4 randomly chosen student residence halls at a public university in Hong Kong(Lee IP, Walker RM, 2019). By applying DiD (Difference in Differences) Method on the data, it was found that POD prompts increased the stair usage by 2.49% on average and the credibility of POD prompt source had no effect on the increase of stair usage. Additionally, the effect of each POD prompt on stair usage and the validity of the DiD results in this context are discussed in this document.
+
+
+## Introduction
+As most buildings in this generation are now equipped with elevators, people other than those who are conscious about their physical health, tend to use elevators wherever possible and one of the reasons could be the lack of knowledge on how using stairs promotes physical health. One of the methods used to educate and encourage people to use stairs is installing prompts(messages, signs, posters, etc,.) at POD (Point Of Decision - a place where a decision is made). To explore how these prompts affect the stair usage and whether the credibility of prompt source makes any difference in the change, a dataset is used from a quasi-experimental field study where 4 student residence halls were chosen randomly at a public university in Hong Kong, and among the 4, 3 halls were randomly chosen as treatment groups for installing 3 POD Prompts with different sources, one with a highly credible source, one with a less credible source, and one with no source(Lee IP, Walker RM, 2019), all the three prompts used in the field can be seen in Figure 1 (Lee IP, Walker RM, 2019). Observations were made with the help of surveillance cameras during two different periods, Control Period(with no prompts installed) and Treatment Period(with prompts installed). In this document, four halls are referred with letters A, B, C, D where A was considered as Control Group and the rest as Treatment Groups. Various graphs and tables were created during the analysis to understand the stair usage in each hall during Control and Treatment period, at the end of analysis Difference in Differences method is used to calculate and estimate the effect of POD (Point Of Decision) Prompts had in encouraging people to use stairs, and whether the source credibility of POD prompts matters, by building two different linear models.
+
+\newpage
+![POD Prompts(Lee IP, Walker RM, 2019)](images/prompts.PNG)
+
+
+```{r echo = FALSE, include=FALSE}
+# Importing all the libraries
+library(tidyverse)
+library(dplyr)
+library(haven)
+library(broom)
+library(skimr)
+library(ggplot2)
+library(knitr)
+#library(kableExtra)
+
+# Importing the dataset directly from the source
+stair_data <- read_dta("https://ndownloader.figshare.com/files/14456651")
+
+# Fixing the treatment variable
+stair_data <- stair_data %>% mutate(treatment = ifelse(hall == 1, 0, 1))
+
+
+# Coverting all the variable types except 'stairuse' to Factors
+stair_data[,c(-6)] <- stair_data[,c(-6)] %>% mutate_all(as.factor)
+
+# Converting stairuse to numeric so that it can be used to build linear model
+stair_data$stairuse <- stair_data$stairuse
+
+# Creating a dataframe just for creating plots, so that we can modify the levels of variables 
+stair_plot_data <- stair_data
+stair_plot_data$stairuse <- as.factor(stair_plot_data$stairuse)
+
+
+```
+
+## Dataset Summary
+The dataset features 14189 observations with 6 variables date, time, hall, period, treatment, and ‘stairuse’. Variables treatment and period are logical, informing whether the observation is part of a treatment or control group in treatment and control period, ‘stairuse’ is also logical, 0 indicates that the person used the elevator and 1 indicates that the person used stairs. 'hall' is a categorical variable with values 1, 2, 3, 4 representing the halls A, B, C, D respectively. The complete rate for each variable in Table 1 indicates that the dataset has no null/empty values, However, the dataset had a serious flaw in the accuracy of the values in the 'treatment' variable. After a thorough analysis of the values of 'treatment', it was found that a value of 1 (TRUE) is given only for treatment groups in the treatment period and not for treatment groups in the control period. This flaw was fixed by modifying the treatment variable during preprocessing.
+
+\newpage
+```{r echo = FALSE}
+# Dataset Summary
+skim(stair_plot_data)
+
+# Changing the levels of few variable to be more comprehensive 
+levels(stair_plot_data$hall) <- c('A', 'B', 'C', 'D')
+levels(stair_plot_data$period) <- c('ControlPeriod', 'TreatmentPeriod') 
+levels(stair_plot_data$stairuse) <- c(FALSE, TRUE)
+levels(stair_plot_data$treatment) <- c('Control','Treatment')
+colnames(stair_plot_data)[colnames(stair_plot_data) == "treatment"] <- "Group"
+```
+
+
+
+## Analysis
+Let's take a look at Table 3 to visualize, how the observations are spread out in various buckets, which Hall belongs to the treatment group, and what is the source for Point Of Decision (POD) prompt. One visible pattern we can observe in Table 3 is that the observations recorded are slightly more in treatment period compared to control period, the observation counts of halls are also not close to equal and a significant difference can be seen between Hall A and Hall D implying that the traffic varies at each hall and period. Looking at these differences, we may wonder whether they affect the recorded number of times stairs used in a hall
+
+```{r echo = FALSE}
+
+
+# Creating the Observations Summary Table
+Hall <- c('A', 'B', 'C', 'D')
+
+
+ControlPeriodObservations <- c(nrow(stair_plot_data %>% filter(hall == 'A' & period == 'ControlPeriod')),
+                   nrow(stair_plot_data %>% filter(hall == 'B' & period == 'ControlPeriod')),
+                   nrow(stair_plot_data %>% filter(hall == 'C' & period == 'ControlPeriod')),
+                   nrow(stair_plot_data %>% filter(hall == 'D' & period == 'ControlPeriod')))
+
+
+TreatmentPeriodObservations <- c(nrow(stair_plot_data %>% filter(hall == 'A' & period == 'TreatmentPeriod')),
+                     nrow(stair_plot_data %>% filter(hall == 'B' & period == 'TreatmentPeriod')),
+                     nrow(stair_plot_data %>% filter(hall == 'C' & period == 'TreatmentPeriod')),
+                     nrow(stair_plot_data %>% filter(hall == 'D' & period == 'TreatmentPeriod')))
+
+
+Group <- c("Control", "Treatment", "Treatment", "Treatment")
+
+POD_PromptSource <- c('No Prompt', 'NEJM & Doctor', 'FB & Student', 'No Source')
+
+observations_summary <- data.frame(Hall,ControlPeriodObservations, TreatmentPeriodObservations, Group, POD_PromptSource)
+
+# Displaying the Observations summary
+kable(observations_summary, caption = 'Observations Summary')
+
+```
+
+
+and luckily they did not have a huge impact in the stair usage in the control period, Figure 2 shows the usage of stairs at all the four halls in both Control and Treatment Period, stair usage of all the treatment groups (Hall B, C, D) are close to Control Group (Hall A) with Hall C being slightly higher. During the treatment period, except for Hall D, we can observe a pattern of stair usage increasing as the observation count increases. During the treatment period, all the treatment groups had an increased stair usage meaning that POD prompts had a positive effect. 
+
+```{r echo = FALSE}
+# Stairsusage of 4 random halls \nat a public university in Hong Kong
+ggplot(stair_plot_data) + geom_bar(aes(x = hall, fill = stairuse)) + facet_wrap(~ period) + ggtitle("Figure 2: Stairsusage of 4 random halls \nat a public university in Hong Kong")
+```
+
+
+Let's dig more into the number of times stairs used at each hall in both Control and Treatment Period with the help of Figure 3, the most interesting thing we can observe is despite the traffic being high during the treatment period, the stair usage in the Control Group (Hall A) reduced significantly to almost half and this unpredictable behavior poses a serious threat to the validity of the effect of treatment in treatment groups (Hall B, C, D), but before we jump into any conclusions let's take a look at Table 4 to see the actual percentage of stairs used at each hall and period, along with various differences between groups and periods. Table 4 is constructed to replicate a similar table in the original study(Lee IP, Walker RM, 2019) and to verify the results.
+
+```{r echo = FALSE}
+# Number of times stairs used in 4 random halls \nat a public university in Hong Kong
+ggplot(stair_plot_data %>% filter(stairuse == TRUE)) + geom_bar(aes(x=hall, fill=Group)) + facet_wrap(~ period) + ggtitle("Figure 3: Number of times stairs used in 4 random halls \nat a public university in Hong Kong")
+```
+
+# Difference in Differences
+The first thing we're interested to know is whether the treatment had any effect on the stair usage in treatment groups after removing the natural trend, this value can be seen in the 3rd row of PeriodDifference column and it is 2.49, indicating that installing PODprompts had a positive effect on the number of times stairs used in the treatment groups, in other words, stair usage is increased by 2.49% in treatment groups. In Table 4, we can also find the effect of each POD prompt had on stair usage to understand which type of POD prompt source yielded better results. POD prompts in Hall B, C, D had a positive effect with increased stair usage of 1.60%, 3.40%, 2.40% respectively. Clearly POD prompt in Hall C with less credible source had the highest effect, Hall B had the least effect despite having the High Credible source (Lee IP, Walker RM, 2019)  and even the POD prompt installed in Hall D with no source performed better.
+
+```{r echo = FALSE}
+
+# Manually Calculating all the Differences 
+
+hall_a_control_percentage <- round((nrow(stair_data %>% filter(hall == '1' & period == '0' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '1' & period == '0'))) * 100, digits = 2)
+hall_b_control_percentage <- round((nrow(stair_data %>% filter(hall == '2' & period == '0' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '2' & period == '0'))) * 100, digits = 2)
+hall_c_control_percentage <- round((nrow(stair_data %>% filter(hall == '3' & period == '0' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '3' & period == '0'))) * 100, digits = 2)
+hall_d_control_percentage <- round((nrow(stair_data %>% filter(hall == '4' & period == '0' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '4' & period == '0'))) * 100, digits = 2)
+
+
+hall_bcd_cp_percentage <- round((nrow(stair_data %>% filter(treatment == '1' & period == '0' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall != '1' & period == '0'))) * 100, digits = 2)
+
+hall_bcd_tp_percentage <- round((nrow(stair_data %>% filter(treatment == '1' & period == '1' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall != '1' & period == '1'))) * 100, digits = 2)
+
+
+hall_a_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '1' & period == '1' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '1' & period == '1'))) * 100, digits = 2)
+hall_b_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '2' & period == '1' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '2' & period == '1'))) * 100, digits = 2)
+hall_c_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '3' & period == '1' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '3' & period == '1'))) * 100, digits = 2)
+hall_d_treatment_percentage <- round((nrow(stair_data %>% filter(hall == '4' & period == '1' & stairuse == '1'))/
+  nrow(stair_data %>% filter(hall == '4' & period == '1'))) * 100, digits = 2)
+
+# Differencs in Control Period
+difference_bcd_cp <- hall_bcd_cp_percentage - hall_a_control_percentage
+difference_b_cp <- hall_b_control_percentage - hall_a_control_percentage
+difference_c_cp <- hall_c_control_percentage - hall_a_control_percentage
+difference_d_cp <- hall_d_control_percentage - hall_a_control_percentage
+
+# Differences in Treatment Period
+difference_bcd_tp <- hall_bcd_tp_percentage - hall_a_treatment_percentage
+difference_b_tp <- hall_b_treatment_percentage - hall_a_treatment_percentage
+difference_c_tp <- hall_c_treatment_percentage - hall_a_treatment_percentage
+difference_d_tp <- hall_d_treatment_percentage - hall_a_treatment_percentage
+
+
+
+Variable <- c('Control Group (Hall A)','Treatment Groups(Hall B,C,D)', 'Difference (Control and Treatment Groups)','Hall B', 'Difference(Control Group and Hall B)', 'Hall C', 'Difference(Control Group and Hall C)', 'Hall D', 'Difference(Control Group and Hall D)')
+
+
+ControlPeriod <- c(hall_a_control_percentage, hall_bcd_cp_percentage, difference_bcd_cp, hall_b_control_percentage, difference_b_cp, hall_c_control_percentage, difference_c_cp, hall_d_control_percentage, difference_d_cp)
+
+
+TreatmentPeriod <- c(hall_a_treatment_percentage, hall_bcd_tp_percentage, difference_bcd_tp, hall_b_treatment_percentage, difference_b_tp, hall_c_treatment_percentage, difference_c_tp, hall_d_treatment_percentage, difference_d_tp)
+
+# Calculating Difference in Differences
+PeriodDifference <- c(hall_a_treatment_percentage - hall_a_control_percentage, hall_bcd_tp_percentage - hall_bcd_cp_percentage, difference_bcd_tp - difference_bcd_cp, hall_b_treatment_percentage - hall_b_control_percentage, difference_b_tp - difference_b_cp, hall_c_treatment_percentage - hall_c_control_percentage, difference_c_tp - difference_c_cp, hall_d_treatment_percentage - hall_d_control_percentage, difference_d_tp - difference_d_cp)
+
+# Creating summary data frame
+summary_table <- data.frame(Variable, ControlPeriod, TreatmentPeriod, PeriodDifference)
+
+# Displaying DID Summary Table
+kable(summary_table, caption = "Difference in Differences Summary")
+
+
+
+#kable(summary_table, caption = "Table 2: Difference in Differences Summary") %>% kable_styling(bootstrap_options = c("striped", "hover", "bordered")) %>% row_spec(c(3,5,7,9), bold = T)
+
+#kable(tidy(lm_model_h2)) %>% kable_styling(bootstrap_options = c("striped", "hover", "bordered")) %>% row_spec(c(6:8), bold = T)
+
+
+
+
+
+```
+
+Let's see if we can predict the treatment effect by performing Difference in Differences (a technique to calculate the effect of treatment by removing the natural change over time) using linear regression. Two linear models were created to predict the treatment effect, Model 1 estimates the overall effect of the treatments and Model 2 predicts the individual effect of each treatment. Table 5 shows the summary of Model 1 and the estimate of proportion 0.0249 (2.49%) matches the actual value, and the DiD is statistically significant at 0.002 < 0.05 significance level.
+
+```{r echo = FALSE}
+# Linear Model 1 to estimate average Difference in Difference
+lm_model_h1 <- lm(stairuse ~ treatment * period, data = stair_data)
+
+# Summary of Linear Model 1
+kable(tidy(lm_model_h1), caption = "Linear Model estimating the average Difference in Differences")
+```
+
+
+Table 6 shows the summary of Model 2, DiD estimates of all the 3 treatment groups matched with the actual values in Table 4, hall2:period1(Difference in Differences of Hall B vs Control Group - Hall A) is statistically insignificant with value 0.11 > 0.05 significance level. In a similar study(Lee IP, Walker RM, 2019), logistic regression is used to estimate all the DiDs and the results were similar.
+
+```{r echo = FALSE}
+
+# Linear Model 2 to estimate Difference in Differences of each Hall in treatment group
+lm_model_h2 <- lm(stairuse ~ hall * period, data = stair_data)
+
+# Summary of Linear Model 2
+kable(tidy(lm_model_h2), caption = "Linear Model estimating Difference in Differences of each Hall in treatment group")
+```
+
+
+In conclusion, we can say that source credibility didn't have any effect in this experimental study. Though the method DiD indicates that the treatment(s) had a positive effect on stair usage, we cannot assume the same due to the behavior of Control Group (Hall A) in the Treatment period. Natural change in Control Group during the treatment period is very crucial in calculating DiDs of treatment(s) and in our case, Hall A has seen a dramatic change(Table 4) in stair usage during the treatment period, without investigating and studying further about this change, we can neither say treatments worked nor say they didn't.
+
+
+## Ethics
+There were few ethics that aren't considered during the Difference in Difference analysis, it assumes any change occurred in treatment groups during the treatment period is because of the intervention and ignores the possibility any other reasons, although it takes the natural trend of stair usage from control group into consideration there might be various events/reasons encouraging/forcing the students to use stairs. Though the halls chosen were random, 4 is still a small number and it is unethical to form conclusions about the general effectiveness of POD prompts in encouraging people to use stairs. The context of both the control and treatment period should have been explored to better understand the dramatic change in the stair usage of Hall A during the Treatment Period and how it could have affected the change in treatment groups.
+
+
+
+## Weakness and Concerns
+There were a lot of weaknesses with the dataset and the data collection process. In the original dataset, the 'treatment' variable is wrongly calculated by not giving a value of 1 (TRUE) to treatment groups during the control period, this was found when null values were observed in the summaries of linear models indicating the existence of linearity. treatment variable is modified during data preprocessing and the analysis took place on the modified dataset and the results were similar to the original study which could mean that the original study is conducted on the valid dataset but a mistake could have been done when exporting the dataset. 
+
+A variable that could have been useful if available and ignored in the analysis is anonymized person id, this could have helped in validating the DiD results. There may be a few students who use stairs all the time, and these people could roam more or less often depending on the week, day or time, in that case, even though there are more instances of using stairs it doesn't mean more people are using stairs, having a 'person id' could help in finding the possibility of such scenarios.
+
+## Appendix {-}
+Reproducable code of this document is available at 
+
+
+
+\newpage
+## References
+- David Robinson and Alex Hayes (2019). broom: Convert Statistical Analysis Objects into Tidy Tibbles. R package
+  version 0.5.3. https://CRAN.R-project.org/package=broom
+- Elin Waring, Michael Quinn, Amelia McNamara, Eduardo Arino de la Rubia, Hao Zhu and Shannon Ellis (2019). skimr: Compact and
+  Flexible Summaries of Data. R package version 2.0.2. https://CRAN.R-project.org/package=skimr
+- Hadley Wickham and Evan Miller (2019). haven: Import and Export 'SPSS', 'Stata' and 'SAS' Files. R package
+  version 2.2.0. https://CRAN.R-project.org/package=haven
+- Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2019). dplyr: A Grammar of Data Manipulation. R package version
+  0.8.3. https://CRAN.R-project.org/package=dplyr
+- Lee IP, Walker RM (2019) Does source credibility matter for point-of-decision prompts? A quasi-experimental field study to increase stair use. PLoS ONE 14(11): e0225520. https://doi.org/10.1371/journal.pone.0225520
+- Lee, Ivan; Walker, Richard M. (2019): dataset.dta. figshare. Dataset. https://doi.org/10.6084/m9.figshare.7764599.v2
+- R Core Team (2019). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL: https://www.R-project.org/.
+- Wickham, Hadley (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York. URL:https://ggplot2.tidyverse.org
+- Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
+  https://doi.org/10.21105/joss.01686
+- Yihui Xie (2019). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.26.
+
+
